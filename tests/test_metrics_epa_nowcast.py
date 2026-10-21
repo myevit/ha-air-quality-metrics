@@ -12,6 +12,56 @@ from custom_components.air_quality_metrics.metrics.epa.nowcast import (
 class TestCalculateNowcast:
     """Container for testing NowCast air quality calculation logic."""
 
+    @pytest.mark.parametrize(
+        "sensor_type", [SensorDeviceClass.PM25, SensorDeviceClass.PM10]
+    )
+    @pytest.mark.parametrize(
+        "hourly_data",
+        [
+            pytest.param([0.0] * 12, id="full-zero-window"),
+            pytest.param([0.0, None, 0.0] + [None] * 9, id="missing-hours"),
+            pytest.param([0.0, -1.0, 0.0] + [None] * 9, id="negative-excluded"),
+        ],
+    )
+    def test_nowcast_valid_zero_window(self, sensor_type, hourly_data):
+        """Enough recent zero readings produce AQI zero, not division by zero."""
+        assert calculate_nowcast(sensor_type, hourly_data) == (0, 0)
+
+    @pytest.mark.parametrize(
+        "sensor_type", [SensorDeviceClass.PM25, SensorDeviceClass.PM10]
+    )
+    @pytest.mark.parametrize(
+        ("hourly_data", "expected"),
+        [
+            pytest.param([], (None, 2), id="cold-start"),
+            pytest.param([None] * 12, (None, 2), id="all-missing"),
+            pytest.param([-1.0] * 12, (None, 2), id="all-negative"),
+            pytest.param([float("nan")] * 12, (None, 2), id="not-a-number"),
+            pytest.param([0.0] + [None] * 11, (None, 1), id="one-valid-zero"),
+            pytest.param([0.0, -1.0, None], (None, 1), id="negative-not-valid"),
+            pytest.param([None] * 3 + [0.0] * 9, (None, 2), id="old-zeros-only"),
+        ],
+    )
+    def test_nowcast_insufficient_zero_or_invalid_data(
+        self, sensor_type, hourly_data, expected
+    ):
+        """Missing or invalid hours must not become clean-air readings."""
+        assert calculate_nowcast(sensor_type, hourly_data) == expected
+
+    @pytest.mark.parametrize(
+        "sensor_type", [SensorDeviceClass.PM25, SensorDeviceClass.PM10]
+    )
+    def test_nowcast_mixed_zero_positive_and_missing(self, sensor_type):
+        """Missing hours retain their age; valid zeros contribute to the denominator."""
+        hourly_data = [0.0, None, 100.0, -1.0] + [None] * 8
+        with patch(
+            "custom_components.air_quality_metrics.metrics.epa.nowcast.calculate_aqi",
+            return_value=42,
+        ) as mock_calculate_aqi:
+            assert calculate_nowcast(sensor_type, hourly_data) == (42, 0)
+        # Weight 0.5: (0 * 1 + 100 * 0.25) / (1 + 0.25) = 20.
+        mock_calculate_aqi.assert_called_once_with(20.0, AQI_CONFIGS[sensor_type])
+
     def test_nowcast_insufficient_recent_data(self):
         """Total data is plentiful, but missing in the latest 3-hour window."""
         # Only 1 valid data point in the first 3 elements. Fails NowCast criteria.

@@ -64,6 +64,40 @@ def coordinator(mock_hass, mock_config_entry):
 class TestOutdoorCoordinator:
     """Container for testing calculation rules in the Outdoor Air Quality Data Coordinator."""
 
+    @pytest.mark.parametrize(
+        "sensor_type", [SensorDeviceClass.PM25, SensorDeviceClass.PM10]
+    )
+    @pytest.mark.parametrize(
+        ("states", "expected_aqi", "expected_hours"),
+        [
+            pytest.param(["0.0"] * 12, 0, 0, id="valid-zero-history"),
+            pytest.param(["unknown"] * 12, None, 2, id="unknown-history"),
+            pytest.param(["unavailable"] * 12, None, 2, id="unavailable-history"),
+            pytest.param(["-1.0"] * 12, None, 2, id="negative-history"),
+            pytest.param(
+                ["0.0", "unknown", "unavailable"], None, 1, id="one-valid-hour"
+            ),
+        ],
+    )
+    def test_zero_and_invalid_history(
+        self, coordinator, sensor_type, states, expected_aqi, expected_hours
+    ):
+        """Exercise history parsing and the real NowCast calculation together."""
+        now = dt_util.utcnow()
+        history = {
+            "sensor.test_particles": [
+                MockState(
+                    state=state, last_updated=now - timedelta(hours=hour, minutes=30)
+                )
+                for hour, state in enumerate(states)
+            ]
+        }
+        metrics = coordinator._process_pollutant_metrics(
+            ["sensor.test_particles"], history, sensor_type
+        )
+        assert metrics.nowcast_aqi == expected_aqi
+        assert metrics.nowcast_hours_remaining == expected_hours
+
     @patch(
         "custom_components.air_quality_metrics.sensors.outdoor.coordinator.calculate_nowcast"
     )

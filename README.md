@@ -14,6 +14,12 @@
 A Home Assistant custom component that calculates precise EPA Air Quality Index
 (AQI and NowCast) and Indoor Air Quality (IAQI) values from raw sensor data.
 
+> Fork of [ex-nerd/ha-air-quality-metrics](https://github.com/ex-nerd/ha-air-quality-metrics)
+> with a targeted fix for valid all-zero NowCast windows. The inherited outdoor
+> calculations average recorder change samples in rolling age-based hourly buckets,
+> not time-weighted, fixed completed hours; sparse change history can leave hours
+> missing. This fix does not establish official EPA AQI/NowCast compliance.
+
 ## Features
 
 Local calculation of air quality metrics for either indoor or outdoor sensors,
