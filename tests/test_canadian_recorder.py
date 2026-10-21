@@ -50,3 +50,11 @@ async def test_real_recorder_carryforward(recorder_mock, hass, freezer, interrup
     assert result["pm25_mean"] == (None if interrupted else 20)
     assert result["index"] == (None if interrupted else 2)
     assert result["coverage"] == pytest.approx(2 / 3 if interrupted else 1)
+    assert result["evaluated_at"] == (start + timedelta(hours=1)).isoformat()
+    assert result["source_last_reported"] == result["evaluated_at"]
+    freezer.move_to(start + timedelta(hours=1, minutes=1))
+    hass.states.async_set("sensor.test_pm25", "70", ATTRS)
+    again = await coord._async_update_data()
+    assert again["index"] == result["index"]
+    assert again["evaluated_at"] != result["evaluated_at"]
+    assert again["source_last_reported"] == again["evaluated_at"]

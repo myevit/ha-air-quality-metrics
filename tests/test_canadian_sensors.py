@@ -68,6 +68,11 @@ async def test_canadian_native_setup(hass, value, age, expected):
     assert len(entities) == 2
     numeric, category = entities
     assert numeric.native_value == expected
+    assert numeric.extra_state_attributes["evaluated_at"] == NOW.isoformat()
+    assert (
+        numeric.extra_state_attributes["source_last_reported"]
+        == current.last_reported.isoformat()
+    )
     assert numeric.device_class is None
     assert numeric.native_unit_of_measurement is None
     assert numeric.extra_state_attributes["index_type"] == "canadian_aqhi_smoke_pm25"
@@ -130,6 +135,10 @@ async def test_never_retain_prior_result(hass, failure):
         result = await coord._async_update_data()
     assert result["index"] is None
     assert result["category"] is None
+    assert result["evaluated_at"] == NOW.isoformat()
+    assert result["source_last_reported"] == (
+        None if failure == "missing" else NOW.isoformat()
+    )
     assert (
         result["status"]
         == {

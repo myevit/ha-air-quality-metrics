@@ -1,6 +1,7 @@
 """Canadian one-hour PM2.5 smoke component; see docs/canadian-aqhi.md."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from fractions import Fraction
 from math import ceil, isfinite
 
 from homeassistant.core import State
@@ -21,25 +22,31 @@ def pm25_value(state: State | None) -> float | None:
 
 def hour_mean(
     states: list[State], start: datetime, end: datetime
-) -> tuple[float | None, float]:
+) -> tuple[Fraction | None, float]:
     """Integrate HA held states; require full valid coverage (local policy)."""
     ordered = sorted(states, key=lambda state: state.last_updated)
-    weighted = covered = 0.0
-    duration = (end - start).total_seconds()
+    weighted = Fraction(0)
+    covered = 0
+    # HA timestamps have microsecond resolution: never relax full coverage
+    # with an epsilon, which could admit a real invalid interval.
+    tick = timedelta(microseconds=1)
+    duration = (end - start) // tick
     for pos, state in enumerate(ordered):
         left = max(start, state.last_updated)
         right = (
             min(end, ordered[pos + 1].last_updated) if pos + 1 < len(ordered) else end
         )
-        seconds = max(0.0, (right - left).total_seconds())
+        microseconds = max(0, (right - left) // tick)
         value = pm25_value(state)
         if value is not None:
-            weighted += value * seconds
-            covered += seconds
+            # Preserve the recorded decimal exactly through index derivation.
+            # Float accumulation can turn a constant 100 hour into 10+.
+            weighted += Fraction(state.state) * microseconds
+            covered += microseconds
     return (weighted / duration if covered == duration else None, covered / duration)
 
 
-def smoke_index(pm25: float | None) -> int | None:
+def smoke_index(pm25: float | Fraction | None) -> int | None:
     """BCCDC bands; Yao et al. 2019/2020 ceiling rule, 11 represents 10+."""
     if pm25 is None or not isfinite(pm25) or pm25 < 0:
         return None

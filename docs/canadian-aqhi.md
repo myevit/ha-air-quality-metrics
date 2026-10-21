@@ -95,7 +95,19 @@ Both expose `index_type: canadian_aqhi_smoke_pm25`,
 `scope: local_pm25_only_estimate`, `display_value` (`10+` at 11), `category`,
 `source_entity`, `pm25_mean`, `mean_unit: μg/m³`, `coverage` (fraction 0–1),
 `coverage_required: 1.0`, `period_start`, `period_end`, `averaging`, `method`,
-`source_max_age_minutes: 15`, `limitations`, and `status`.
+`source_max_age_minutes: 15`, `source_last_reported`, `evaluated_at`,
+`limitations`, and `status`.
+`source_last_reported` is the authoritative HA source receipt timestamp (ISO
+UTC, null if missing); `evaluated_at` is the coordinator evaluation start time
+(ISO UTC), refreshed on every evaluation including invalid/history failures.
+Changing this attribute publishes repeated valid calculations even when the
+index and source concentration are unchanged. Consumers must bind certification
+to `source_entity`, age both timestamps independently, and still reject a
+currently invalid/unavailable source. Normal HA frontend states omit
+`last_reported`; source `last_updated` cannot certify unchanged reports.
+Coverage uses exact microsecond durations; weighted concentrations and ceiling
+use exact rational arithmetic without rounding source decimals. Only the
+diagnostic `pm25_mean` attribute is converted to a JSON-compatible float.
 Statuses are `valid`, `source_invalid`, `source_stale`, `history_unavailable`,
 `incomplete_history`. A frontend must respect unknown/unavailable, must not map
 11 to a US AQI grade, and should label it **AQHI smoke / PM2.5 · local estimate**.

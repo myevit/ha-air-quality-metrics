@@ -1,6 +1,8 @@
 """Native Canadian smoke component, not a renamed US AQI."""
 
 from datetime import UTC, datetime, timedelta
+from math import nextafter
+from random import Random
 
 import pytest
 from homeassistant.core import State
@@ -67,3 +69,74 @@ def test_time_weighted_complete_hour(states, expected, coverage):
 def test_bccdc_smoke_component(pm, expected, category):
     assert module.smoke_index(pm) == expected
     assert module.smoke_category(expected) == category
+
+
+@pytest.mark.parametrize(
+    "offsets", [[0, 1802024079, 3205742962], [0, 1650002323, 3501197582]]
+)
+@pytest.mark.parametrize(
+    "value,expected",
+    [(100, 10), (nextafter(100, float("inf")), 11), (100.0001, 11), (0, 1)],
+)
+def test_fractional_second_thresholds(offsets, value, expected):
+    records = [
+        State(
+            "sensor.test_pm25",
+            str(value),
+            {**ATTRS, "sample": i},
+            last_updated=START + timedelta(microseconds=offset),
+        )
+        for i, offset in enumerate(offsets)
+    ]
+    mean, coverage = module.hour_mean(records, START, END)
+    assert coverage == 1
+    assert mean is not None
+    assert float(mean) == value
+    assert module.smoke_index(mean) == expected
+
+
+def test_above_boundary_not_rounded_before_ceiling():
+    records = [
+        state(100, 0),
+        State(
+            "sensor.test_pm25",
+            str(nextafter(100, float("inf"))),
+            ATTRS,
+            last_updated=END - timedelta(microseconds=1),
+        ),
+    ]
+    mean, coverage = module.hour_mean(records, START, END)
+    assert coverage == 1
+    assert mean is not None
+    assert mean > 100
+    assert module.smoke_index(mean) == 11
+
+
+def test_segmented_hours_and_real_microsecond_gap():
+    rng = Random(17)
+    for _ in range(100):
+        offsets = [0, *sorted(rng.sample(range(1, 3_600_000_000), 60))]
+        records = [
+            State(
+                "sensor.test_pm25",
+                "100",
+                ATTRS,
+                last_updated=START + timedelta(microseconds=offset),
+            )
+            for offset in offsets
+        ]
+        mean, coverage = module.hour_mean(records, START, END)
+        assert (mean, coverage) == (100, 1)
+        assert module.smoke_index(mean) == 10
+    records = [
+        state(100, 0),
+        State(
+            "sensor.test_pm25",
+            "unavailable",
+            ATTRS,
+            last_updated=END - timedelta(microseconds=1),
+        ),
+    ]
+    mean, coverage = module.hour_mean(records, START, END)
+    assert mean is None
+    assert coverage < 1

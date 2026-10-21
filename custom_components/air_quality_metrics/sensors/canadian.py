@@ -55,10 +55,16 @@ class CanadianDataCoordinator(DataUpdateCoordinator):
             "period_start": start.isoformat(),
             "period_end": end.isoformat(),
             "status": "source_invalid",
+            # Explicit frontend contract: unchanged reports are not transported
+            # as last_reported by HA's normal websocket entity subscription.
+            "evaluated_at": now.isoformat(),
+            "source_last_reported": None,
         }
         if len(self.source) != 1:
             return result
         current = self.hass.states.get(self.source[0])
+        if current is not None:
+            result["source_last_reported"] = current.last_reported.isoformat()
         if current is None or pm25_value(current) is None:
             return result
         age = now - current.last_reported
@@ -91,7 +97,9 @@ class CanadianDataCoordinator(DataUpdateCoordinator):
         result.update(
             index=index,
             category=smoke_category(index),
-            pm25_mean=mean,
+            # Only the diagnostic attribute is converted for HA serialization;
+            # the index above uses the exact weighted mean.
+            pm25_mean=float(mean) if mean is not None else None,
             coverage=coverage,
             status="valid" if index is not None else "incomplete_history",
         )
