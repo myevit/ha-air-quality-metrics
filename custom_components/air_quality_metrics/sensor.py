@@ -5,8 +5,14 @@ import logging
 from homeassistant.core import HomeAssistant
 
 from custom_components.air_quality_metrics.const import (
+    CONF_PROFILE_CANADIAN,
     CONF_PROFILE_INDOOR,
     CONF_PROFILE_OUTDOOR,
+)
+from custom_components.air_quality_metrics.sensors.canadian import (
+    CanadianDataCoordinator,
+    CanadianSmokeCategorySensor,
+    CanadianSmokeSensor,
 )
 from custom_components.air_quality_metrics.sensors.indoor.coordinator import (
     IndoorDataCoordinator,
@@ -60,6 +66,16 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
                 IAQIPrimaryPollutantSensor(coordinator, entry),
                 IAQICategorySensor(coordinator, entry),
                 IAQIColorSensor(coordinator, entry),
+            ]
+        )
+
+    elif profile == CONF_PROFILE_CANADIAN:
+        coordinator = CanadianDataCoordinator(hass, entry)
+        await coordinator.async_config_entry_first_refresh()
+        entities.extend(
+            [
+                CanadianSmokeSensor(coordinator, entry),
+                CanadianSmokeCategorySensor(coordinator, entry),
             ]
         )
 
