@@ -1,12 +1,12 @@
 {
   "domain": "air_quality_metrics",
   "name": "Air Quality",
-  "codeowners": ["@ex-nerd"],
+  "codeowners": ["@myevit", "@ex-nerd"],
   "config_flow": true,
   "dependencies": ["recorder", "sensor"],
-  "documentation": "https://github.com/ex-nerd/ha-air-quality-metrics",
+  "documentation": "https://github.com/myevit/ha-air-quality-metrics",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/ex-nerd/ha-air-quality-metrics/issues",
+  "issue_tracker": "https://github.com/myevit/ha-air-quality-metrics/issues",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
