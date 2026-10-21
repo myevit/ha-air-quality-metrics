@@ -22,6 +22,57 @@ def auto_enable_custom_integrations(recorder_mock, enable_custom_integrations):
     yield
 
 
+@pytest.mark.parametrize(
+    ("before", "at_start", "at_end", "mean", "index", "category", "coverage"),
+    [
+        pytest.param("10", "100", "100", 100, 10, "high", 1, id="rising"),
+        pytest.param("100", "10", "10", 10, 1, "low", 1, id="falling"),
+        pytest.param("unknown", "100", "100", 100, 10, "high", 1, id="valid-at-start"),
+        pytest.param(
+            "100", "unknown", "100", None, None, None, 0, id="invalid-at-start"
+        ),
+        pytest.param("10", "100", "10", 100, 10, "high", 1, id="end-exclusive"),
+    ],
+)
+async def test_real_recorder_exact_hour_boundaries(
+    recorder_mock,
+    hass,
+    freezer,
+    before,
+    at_start,
+    at_end,
+    mean,
+    index,
+    category,
+    coverage,
+):
+    """Include the start transition, not its predecessor or the end transition."""
+    start = datetime(2026, 10, 20, 11, tzinfo=UTC)
+    end = start + timedelta(hours=1)
+    freezer.move_to(start - timedelta(minutes=10))
+    assert await async_setup_component(hass, "recorder", {})
+    for timestamp, value in (
+        (start - timedelta(minutes=10), before),
+        (start, at_start),
+        (end, at_end),
+    ):
+        freezer.move_to(timestamp)
+        hass.states.async_set("sensor.test_pm25", value, ATTRS)
+        await hass.async_block_till_done()
+        await async_wait_recording_done(hass)
+    entry = MockConfigEntry(
+        domain="air_quality_metrics", data={"sensors": ["sensor.test_pm25"]}
+    )
+    result = await CanadianDataCoordinator(hass, entry)._async_update_data()
+    assert result["pm25_mean"] == mean
+    assert result["index"] == index
+    assert result["category"] == category
+    assert result["coverage"] == coverage
+    assert result["status"] == ("valid" if index is not None else "incomplete_history")
+    assert result["period_start"] == start.isoformat()
+    assert result["period_end"] == end.isoformat()
+
+
 @pytest.mark.parametrize("interrupted", [False, True])
 async def test_real_recorder_carryforward(recorder_mock, hass, freezer, interrupted):
     start = datetime(2026, 10, 20, 11, tzinfo=UTC)

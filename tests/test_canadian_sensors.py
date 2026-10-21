@@ -99,7 +99,7 @@ async def test_canadian_native_setup(hass, value, age, expected):
         assert kwargs["minimal_response"] is False
         assert kwargs["no_attributes"] is False
         assert fetch.call_args.args[1:3] == (
-            NOW.replace(hour=11, minute=0),
+            NOW.replace(hour=11, minute=0) - timedelta(microseconds=1),
             NOW.replace(minute=0),
         )
 

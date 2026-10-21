@@ -76,7 +76,9 @@ class CanadianDataCoordinator(DataUpdateCoordinator):
                 partial(
                     history.get_significant_states,
                     self.hass,
-                    start,
+                    # Recorder excludes transitions exactly at its query start.
+                    # Seed just before it; hour_mean still clamps to [start, end).
+                    start - timedelta(microseconds=1),
                     end,
                     self.source,
                     include_start_time_state=True,
