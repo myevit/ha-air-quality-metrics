@@ -1,4 +1,24 @@
-# Air Quality Metrics for Home Assistant
+# Air Quality Metrics for Home Assistant — DEPRECATED
+
+> **Deprecated: `myevit/ha-air-quality-metrics`. Do not use this fork for new installs.**
+> For a local Canadian PM2.5 smoke estimate, prefer Home Assistant's built-in
+> [Statistics](https://www.home-assistant.io/integrations/statistics/) and
+> [Template](https://www.home-assistant.io/integrations/template/) helpers with a
+> built-in dashboard card. This deprecation applies to this fork, not upstream.
+>
+> Native rolling-window helpers do **not** guarantee exact parity with this
+> integration's completed-hour calculation. Validate source units/freshness,
+> continuous valid history, coverage, index/category output and missing-data
+> behavior before switching consumers. A PM2.5-only local estimate is not full
+> three-pollutant or official community AQHI; keep official regional AQHI separate.
+>
+> Existing installations may remain as a fallback until their native replacement
+> has warmed up and is verified. Replace dashboard/automation consumers first,
+> then retire unused integration entries and uninstall only when safe. This
+> notice does not disable or uninstall anything. License, history and release
+> tags remain available for reference and rollback. The inherited documentation
+> below is historical reference, not a commitment to new features or a
+> recommendation to install this deprecated fork.
 
 [![GitHub Release][releases-shield]][releases]
 ![Project Stage][project-stage-shield]
@@ -195,12 +215,12 @@ If you encounter issues or have feature requests, please log them in our officia
 
 [releases]: https://github.com/ex-nerd/ha-air-quality-metrics/releases
 [releases-shield]: https://img.shields.io/github/v/release/ex-nerd/ha-air-quality-metrics?include_prereleases&style=flat-square
-[project-stage-shield]: https://img.shields.io/badge/project%20stage-production-brightgreen.svg?style=flat-square
+[project-stage-shield]: https://img.shields.io/badge/fork%20stage-deprecated-orange.svg?style=flat-square
 [license-shield]: https://img.shields.io/github/license/ex-nerd/ha-air-quality-metrics?style=flat-square
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green?style=flat-square
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green?style=flat-square
 [github-actions-shield]: https://img.shields.io/github/actions/workflow/status/ex-nerd/ha-air-quality-metrics/tests.yml?branch=main&style=flat-square
 [github-actions]: https://github.com/ex-nerd/ha-air-quality-metrics/actions
-[maintenance-shield]: https://img.shields.io/badge/maintained%3F-yes-green.svg?style=flat-square
+[maintenance-shield]: https://img.shields.io/badge/fork%20status-deprecated-orange.svg?style=flat-square
 [commits-shield]: https://img.shields.io/github/commit-activity/m/ex-nerd/ha-air-quality-metrics?style=flat-square
 [commits]: https://github.com/ex-nerd/ha-air-quality-metrics/graphs/commit-activity
