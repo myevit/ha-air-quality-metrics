@@ -46,7 +46,8 @@ def calculate_nowcast(
         data_max = max(hours_with_data)
         data_min = min(hours_with_data)
         data_range = data_max - data_min
-        data_rate = data_range / data_max
+        # A zero maximum means all valid concentrations are zero (no variation).
+        data_rate = data_range / data_max if data_max != 0 else 0.0
         weight_factor = max(0.5, min(1.0, 1.0 - data_rate))
 
         # Sum up the hourly readigs multiplied by increasingly smaller weight factors
