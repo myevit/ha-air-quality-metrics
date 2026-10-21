@@ -5,6 +5,7 @@ from homeassistant.helpers import selector
 
 from custom_components.air_quality_metrics.const import (
     CONF_PROFILE,
+    CONF_PROFILE_CANADIAN,
     CONF_PROFILE_INDOOR,
     CONF_PROFILE_OUTDOOR,
     CONF_SCAN_INTERVAL,
@@ -14,6 +15,19 @@ from custom_components.air_quality_metrics.const import (
     INDOOR_DEVICE_TYPES,
     OUTDOOR_DEVICE_TYPES,
 )
+
+
+def _valid_canadian_source(hass, entities):
+    """One local PM2.5 source in canonical mass units, never relative NOx."""
+    if len(entities) != 1:
+        return False
+    state = hass.states.get(entities[0])
+    return (
+        state is not None
+        and state.attributes.get("device_class") == "pm25"
+        and state.attributes.get("unit_of_measurement") in ("μg/m³", "\u00b5g/m³")
+    )
+
 
 # Reusable selector that forces a numeric box layout labeled with "minutes"
 SCAN_INTERVAL_SELECTOR = selector.NumberSelector(
@@ -52,7 +66,11 @@ class AirQualityMetricsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_PROFILE): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[CONF_PROFILE_INDOOR, CONF_PROFILE_OUTDOOR],
+                        options=[
+                            CONF_PROFILE_INDOOR,
+                            CONF_PROFILE_OUTDOOR,
+                            CONF_PROFILE_CANADIAN,
+                        ],
                         mode=selector.SelectSelectorMode.LIST,
                         translation_key=CONF_PROFILE,
                     )
@@ -71,6 +89,11 @@ class AirQualityMetricsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if not sensor_selection:
                 errors["base"] = "no_sensors_selected"
+            elif (
+                self.profile_type == CONF_PROFILE_CANADIAN
+                and not _valid_canadian_source(self.hass, sensor_selection)
+            ):
+                errors["base"] = "canadian_pm25_source"
             else:
                 user_input[CONF_PROFILE] = self.profile_type
                 # TODO: figure out how to make this title translatable
@@ -79,11 +102,15 @@ class AirQualityMetricsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     if self.profile_type == CONF_PROFILE_INDOOR
                     else "Outdoor Air Quality"
                 )
+                if self.profile_type == CONF_PROFILE_CANADIAN:
+                    title = "Canadian AQHI smoke / PM2.5"
                 return self.async_create_entry(title=title, data=user_input)
 
         # Dynamically determine the device class filter list
         if self.profile_type == CONF_PROFILE_INDOOR:
             device_class_filter = INDOOR_DEVICE_TYPES
+        elif self.profile_type == CONF_PROFILE_CANADIAN:
+            device_class_filter = ["pm25"]
         else:
             device_class_filter = OUTDOOR_DEVICE_TYPES
 
@@ -125,12 +152,18 @@ class AirQualityMetricsOptionsFlowHandler(config_entries.OptionsFlow):
             if not sensor_selection:
                 errors["base"] = "no_sensors_selected"
 
+            if profile == CONF_PROFILE_CANADIAN and not _valid_canadian_source(
+                self.hass, sensor_selection
+            ):
+                errors["base"] = "canadian_pm25_source"
             if not errors:
                 return self.async_create_entry(title="", data=user_input)
 
         # Dynamic filter assignment based on profile type
         if profile == CONF_PROFILE_INDOOR:
             device_class_filter = INDOOR_DEVICE_TYPES
+        elif profile == CONF_PROFILE_CANADIAN:
+            device_class_filter = ["pm25"]
         else:
             device_class_filter = OUTDOOR_DEVICE_TYPES
 

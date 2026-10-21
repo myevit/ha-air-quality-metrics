@@ -20,6 +20,17 @@ A Home Assistant custom component that calculates precise EPA Air Quality Index
 > not time-weighted, fixed completed hours; sparse change history can leave hours
 > missing. This fix does not establish official EPA AQI/NowCast compliance.
 
+## Native Canadian AQHI smoke / PM2.5
+
+The **Outdoor — Canadian AQHI smoke / PM2.5 (local estimate)** profile implements
+Canada's one-hour PM2.5 smoke component on the **1–10+** scale with Canadian
+low/moderate/high/very-high categories. It uses one outdoor PM2.5 source and
+time-weighted complete-hour recorder history; it does not reuse US AQI buckets.
+This is a **local PM-only estimate**, not complete three-pollutant or official
+community AQHI/AQHI-Plus. Existing US/indoor entries remain compatible.
+
+See [method, primary sources, coverage policies, and native entity/card contract](docs/canadian-aqhi.md).
+
 ## Features
 
 Local calculation of air quality metrics for either indoor or outdoor sensors,

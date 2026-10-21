@@ -4,7 +4,8 @@
     "profile": {
       "options": {
         "indoor": "Indoor",
-        "outdoor": "Outdoor"
+        "outdoor": "Outdoor (US EPA AQI)",
+        "outdoor_canadian_smoke": "Outdoor — Canadian AQHI smoke / PM2.5 (local estimate)"
       }
     }
   },
@@ -21,11 +22,13 @@
         "data": {
           "scan_interval": "Update Interval",
           "sensors": "Source Entities"
-        }
+        },
+        "description": "Canadian smoke mode: select exactly one outdoor PM2.5 sensor in μg/m³. This local PM-only estimate is not complete or official community AQHI. Recorder history for one complete hour is required."
       }
     },
     "error": {
-      "no_sensors_selected": "You must select at least one source sensor entity."
+      "no_sensors_selected": "You must select at least one source sensor entity.",
+      "canadian_pm25_source": "Select exactly one PM2.5 sensor with μg/m³ units."
     }
   },
   "options": {
@@ -40,7 +43,8 @@
       }
     },
     "error": {
-      "no_sensors_selected": "You must select at least one source sensor entity."
+      "no_sensors_selected": "You must select at least one source sensor entity.",
+      "canadian_pm25_source": "Select exactly one PM2.5 sensor with μg/m³ units."
     }
   },
   "entity": {
@@ -161,6 +165,18 @@
       },
       "iaqi_color": {
         "name": "IAQI color hex"
+      },
+      "aqhi_smoke_pm25": {
+        "name": "AQHI smoke / PM2.5 (local estimate)"
+      },
+      "aqhi_smoke_category": {
+        "name": "AQHI smoke risk category",
+        "state": {
+          "low": "Low",
+          "moderate": "Moderate",
+          "high": "High",
+          "very_high": "Very high"
+        }
       }
     }
   }

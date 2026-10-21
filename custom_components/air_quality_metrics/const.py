@@ -35,5 +35,6 @@ OUTDOOR_DEVICE_TYPES: Final = [
 CONF_PROFILE: Final = "profile"
 CONF_PROFILE_INDOOR: Final = "indoor"
 CONF_PROFILE_OUTDOOR: Final = "outdoor"
+CONF_PROFILE_CANADIAN: Final = "outdoor_canadian_smoke"
 CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_SENSORS: Final = "sensors"
